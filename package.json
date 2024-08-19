@@ -7,6 +7,7 @@
     "vscode": "^1.92.0"
   },
   "categories": [
+    "Visualization",
     "Other"
   ],
   "activationEvents": [],
@@ -14,10 +15,31 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-codebase-visualizer.helloWorld",
-        "title": "Hello World"
+        "command": "codebase-visualizer.generateControlFlow",
+        "title": "Generate Control Flow Diagram"
+      },
+      {
+        "command": "codebase-visualizer.generateArchitecture",
+        "title": "Generate Architecture Diagram"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codebase-visualizer",
+          "title": "Codebase Visualizer",
+          "icon": "resources/visualizer-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codebase-visualizer": [
+        {
+          "id": "codebaseVisualizerView",
+          "name": "Codebase Visualizer"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -36,6 +58,14 @@
     "eslint": "^8.57.0",
     "typescript": "^5.4.5",
     "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0"
+    "@vscode/test-electron": "^2.4.0",
+    "@types/glob": "^7.1.3",
+    "glob": "^7.1.7",
+    "mocha": "^8.4.0",
+    "vscode-test": "^1.5.2"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.14.7",
+    "@babel/traverse": "^7.14.7"
   }
 }
