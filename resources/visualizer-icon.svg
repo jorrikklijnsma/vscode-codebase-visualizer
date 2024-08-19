@@ -1,0 +1,22 @@
+<!-- visualizer icon -->
+<!-- This is the logo form the visualizer (a tool for visualizing data structures and architectures in a Codebase) -->
+<!-- This logo shows an eye in the middle, symbolizing the visualizer's ability to see the codebase in a different way. -->
+<!-- The style is a simple black and white logo, and the eye is a simple oval with a pupil in the middle. -->
+<!-- It has the look of an fish eye lens, making the eye look a bit distorted. -->
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+  <!-- A fisheye filter -->
+  <defs>
+    <filter id="fisheye">
+      <feFlood result="flood" flood-color="black" flood-opacity="1"></feFlood>
+      <feComposite in="flood" in2="SourceGraphic" operator="in" result="mask"></feComposite>
+      <feGaussianBlur in="mask" stdDeviation="5" result="blur"></feGaussianBlur>
+      <feComposite in="SourceGraphic" in2="blur" operator="out" result="composite"></feComposite>
+      <feBlend in="SourceGraphic" in2="composite" mode="normal"></feBlend>
+    </filter>
+  </defs>
+  
+  <!-- the EYE -->
+  <circle cx="12" cy="12" r="3" fill="black" filter="url(#fisheye)"/>
+  <path d="M22 12c0 2.5-4 7-10 7s-10-4.5-10-7 4-7 10-7 10 4.5 10 7z"/>
+</svg>
