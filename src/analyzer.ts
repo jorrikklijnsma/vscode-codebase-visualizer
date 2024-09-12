@@ -3,12 +3,29 @@ import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as path from 'path';
 
-export async function generateControlFlow(): Promise<any> {
+interface ControlFlowData {
+    nodes: Array<{ id: string; label: string }>;
+    edges: Array<{ from: string; to: string }>;
+}
+
+interface Component {
+    name: string;
+    imports: string[];
+    props: string[];
+    emits: string[];
+}
+
+interface ArchitectureData {
+    components: Component[];
+    relationships: Array<{ from: string; to: string }>;
+}
+
+export async function generateControlFlow(): Promise<ControlFlowData> {
     const files = await getVueFiles();
     return analyzeControlFlow(files);
 }
 
-export async function generateArchitecture(): Promise<any> {
+export async function generateArchitecture(): Promise<ArchitectureData> {
     const files = await getVueFiles();
     return analyzeArchitecture(files);
 }
@@ -17,9 +34,8 @@ async function getVueFiles(): Promise<vscode.Uri[]> {
     return await vscode.workspace.findFiles('**/*.vue');
 }
 
-// Analyze control flow in Vue files
-async function analyzeControlFlow(files: vscode.Uri[]): Promise<any> {
-    const controlFlowData: any = {
+async function analyzeControlFlow(files: vscode.Uri[]): Promise<ControlFlowData> {
+    const controlFlowData: ControlFlowData = {
         nodes: [],
         edges: []
     };
@@ -28,31 +44,27 @@ async function analyzeControlFlow(files: vscode.Uri[]): Promise<any> {
         const content = await vscode.workspace.fs.readFile(file);
         const code = content.toString();
 
-        // Parse the Vue file
         const ast = parser.parse(code, {
             sourceType: 'module',
             plugins: ['typescript', 'jsx']
         });
 
-        // Traverse the AST
+        const fileName = path.basename(file.fsPath);
+
         traverse(ast, {
             CallExpression(path) {
                 const callee = path.node.callee;
                 if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
                     const methodName = callee.property.name;
-                    const fileName = path.basename(file.fsPath);
 
-                    // Add node for the file if it doesn't exist
-                    if (!controlFlowData.nodes.some((node: any) => node.id === fileName)) {
+                    if (!controlFlowData.nodes.some(node => node.id === fileName)) {
                         controlFlowData.nodes.push({ id: fileName, label: fileName });
                     }
 
-                    // Add node for the method if it doesn't exist
-                    if (!controlFlowData.nodes.some((node: any) => node.id === methodName)) {
+                    if (!controlFlowData.nodes.some(node => node.id === methodName)) {
                         controlFlowData.nodes.push({ id: methodName, label: methodName });
                     }
 
-                    // Add edge between file and method
                     controlFlowData.edges.push({ from: fileName, to: methodName });
                 }
             }
@@ -62,9 +74,8 @@ async function analyzeControlFlow(files: vscode.Uri[]): Promise<any> {
     return controlFlowData;
 }
 
-// Analyze architecture of Vue files
-async function analyzeArchitecture(files: vscode.Uri[]): Promise<any> {
-    const architectureData: any = {
+async function analyzeArchitecture(files: vscode.Uri[]): Promise<ArchitectureData> {
+    const architectureData: ArchitectureData = {
         components: [],
         relationships: []
     };
@@ -73,33 +84,36 @@ async function analyzeArchitecture(files: vscode.Uri[]): Promise<any> {
         const content = await vscode.workspace.fs.readFile(file);
         const code = content.toString();
 
-        // Parse the Vue file
         const ast = parser.parse(code, {
-            sourceType: 'module',
-            plugins: ['typescript', 'jsx']
+          sourceType: 'module',
+          plugins: ['typescript', 'jsx', 'vue'],
+          tokens: true
         });
 
         const fileName = path.basename(file.fsPath);
-        const component = { name: fileName, imports: [], props: [], emits: [] };
+        const component: Component = { name: fileName, imports: [], props: [], emits: [] };
 
-        // Traverse the AST
         traverse(ast, {
             ImportDeclaration(path) {
                 const importName = path.node.source.value;
                 component.imports.push(importName);
             },
             ObjectProperty(path) {
-                if (path.node.key.name === 'props' && path.node.value.type === 'ObjectExpression') {
-                    path.node.value.properties.forEach((prop: any) => {
-                        component.props.push(prop.key.name);
-                    });
-                }
-                if (path.node.key.name === 'emits' && path.node.value.type === 'ArrayExpression') {
-                    path.node.value.elements.forEach((emit: any) => {
-                        if (emit.type === 'StringLiteral') {
-                            component.emits.push(emit.value);
-                        }
-                    });
+                if (path.node.key.type === 'Identifier') {
+                    if (path.node.key.name === 'props' && path.node.value.type === 'ObjectExpression') {
+                        path.node.value.properties.forEach((prop) => {
+                            if (prop.type === 'ObjectProperty' && prop.key.type === 'Identifier') {
+                                component.props.push(prop.key.name);
+                            }
+                        });
+                    }
+                    if (path.node.key.name === 'emits' && path.node.value.type === 'ArrayExpression') {
+                        path.node.value.elements.forEach((emit) => {
+                            if (emit && emit.type === 'StringLiteral') {
+                                component.emits.push(emit.value);
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -107,7 +121,6 @@ async function analyzeArchitecture(files: vscode.Uri[]): Promise<any> {
         architectureData.components.push(component);
     }
 
-    // Analyze relationships between components
     for (const component of architectureData.components) {
         for (const importName of component.imports) {
             const importedComponent = architectureData.components.find(c => c.name === importName);

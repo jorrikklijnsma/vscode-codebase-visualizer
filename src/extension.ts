@@ -5,23 +5,28 @@ import { CodebaseVisualizerViewProvider } from './CodebaseVisualizerViewProvider
 export function activate(context: vscode.ExtensionContext) {
     console.log('Codebase Visualizer is now active!');
 
-    const codebaseVisualizerViewProvider = new CodebaseVisualizerViewProvider(context.extensionUri);
+    const provider = new CodebaseVisualizerViewProvider(context.extensionUri);
 
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(CodebaseVisualizerViewProvider.viewType, codebaseVisualizerViewProvider)
+        vscode.window.registerWebviewViewProvider(
+            CodebaseVisualizerViewProvider.viewType,
+            provider
+        )
     );
 
     let generateControlFlowCommand = vscode.commands.registerCommand('codebase-visualizer.generateControlFlow', async () => {
         const controlFlowData = await generateControlFlow();
-        codebaseVisualizerViewProvider.updateControlFlow(controlFlowData);
+        provider.updateControlFlow(controlFlowData);
     });
 
     let generateArchitectureCommand = vscode.commands.registerCommand('codebase-visualizer.generateArchitecture', async () => {
         const architectureData = await generateArchitecture();
-        codebaseVisualizerViewProvider.updateArchitecture(architectureData);
+        provider.updateArchitecture(architectureData);
     });
 
     context.subscriptions.push(generateControlFlowCommand, generateArchitectureCommand);
 }
 
-export function deactivate() {}
+export function deactivate() {
+		console.log('Codebase Visualizer is now inactive!');
+}
